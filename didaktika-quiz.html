@@ -1,0 +1,319 @@
+<title>Дидактика сайысы</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;800;900&family=Nunito+Sans:wght@400;600;700;800&display=swap">
+<style>
+/* Layout: slide-like cards on warm tan paper; dark-brown band like the title slide; doodle cats + sparkles */
+:root{
+  --bark:#3b2015; --tan:#c9a188; --cream:#fff8ee; --peach:#fcd5b5;
+  --maroon:#6b2420; --amber:#d97a1e; --ink:#2a1a12; --muted:#7a5a48;
+  --ok:#3f8f4f; --bad:#c2412f; --line:#e9d4c2;
+  --display:"Montserrat",system-ui,sans-serif;
+  --body:"Nunito Sans",system-ui,sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{margin:0;background:var(--cream);color:var(--ink);font:16px/1.5 var(--body);
+  background-image:radial-gradient(circle at 12% 18%,rgba(201,161,136,.25) 0 2px,transparent 3px),radial-gradient(circle at 70% 60%,rgba(201,161,136,.22) 0 2px,transparent 3px);
+  background-size:120px 120px,170px 170px}
+.wrap{max-width:720px;margin:0 auto;padding-block:20px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:20px}
+h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance}
+button{font:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+
+/* hero = title slide */
+.hero{position:relative;border-radius:22px;overflow:hidden;background:linear-gradient(90deg,var(--bark) 0 34%,var(--tan) 34%);color:#fff;padding:28px 24px 84px;min-height:250px}
+.hero .eyebrow{font:800 12px/1 var(--body);letter-spacing:.08em;text-transform:uppercase;color:#1b0f0a}
+.hero h1{font-weight:900;font-size:clamp(30px,7vw,46px);line-height:1.05;margin-top:12px;letter-spacing:.01em}
+.hero p{margin:12px 0 0;max-width:30em;color:#fff;font-size:15px}
+.hero .cat{position:absolute;right:14px;bottom:6px;width:130px}
+.spark{position:absolute;color:var(--bark)}
+
+.card{background:#fff;border-radius:20px;padding:22px;box-shadow:0 6px 0 var(--line)}
+.card.peach{background:var(--peach);box-shadow:none}
+.label{font:800 12px/1 var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--amber)}
+.section-title{font-weight:900;color:var(--maroon);font-size:22px;text-shadow:1px 1px 0 rgba(0,0,0,.12);text-transform:uppercase}
+
+.field{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.field label{font-weight:800}
+input[type=text]{width:100%;font:700 18px var(--body);padding:14px 16px;border:2px solid var(--tan);border-radius:14px;background:var(--cream);color:var(--ink)}
+.btn{border:0;border-radius:14px;padding:15px 22px;font-weight:800;font-size:17px;background:var(--bark);color:#fff;transition:transform .1s}
+.btn:active{transform:scale(.98)}
+.btn.ghost{background:transparent;color:var(--bark);border:2px solid var(--bark)}
+.btn.small{padding:8px 14px;font-size:14px}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.hint{color:var(--muted);font-size:14px;margin:10px 0 0}
+.err{color:var(--bad);font-weight:700;font-size:14px;margin:8px 0 0}
+
+/* quiz header */
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bark);color:#fff;border-radius:16px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.bar .grp{font-weight:800;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.timer{font:900 24px var(--display);font-variant-numeric:tabular-nums;color:var(--peach);display:flex;align-items:center;gap:6px}
+.progress{height:10px;background:var(--line);border-radius:99px;overflow:hidden}
+.progress i{display:block;height:100%;background:var(--amber);transition:width .3s}
+.qnum{display:flex;justify-content:space-between;font-weight:800;color:var(--muted);font-size:14px}
+.clue{font:700 20px/1.4 var(--body);margin:10px 0 0}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px}
+@media (max-width:460px){.opts{grid-template-columns:1fr}}
+.opt{border:2px solid var(--tan);background:var(--cream);color:var(--ink);border-radius:14px;padding:16px 14px;font-weight:800;font-size:17px;text-align:left;min-height:58px}
+.opt.ok{background:var(--ok);border-color:var(--ok);color:#fff}
+.opt.bad{background:var(--bad);border-color:var(--bad);color:#fff}
+.opt:disabled{cursor:default}
+
+/* results */
+.big{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+.stat{background:var(--cream);border-radius:16px;padding:16px;text-align:center}
+.stat b{display:block;font:900 34px var(--display);color:var(--maroon);font-variant-numeric:tabular-nums}
+.stat span{font-weight:700;color:var(--muted);font-size:14px}
+
+.board{list-style:none;margin:14px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.board li{display:grid;grid-template-columns:40px 1fr auto auto;gap:12px;align-items:center;background:var(--cream);border-radius:14px;padding:12px 14px;font-variant-numeric:tabular-nums}
+.board li.me{outline:3px solid var(--amber)}
+.board .pl{font:900 18px var(--display);color:var(--bark);text-align:center}
+.board li:nth-child(1) .pl{color:#b8860b}.board li:nth-child(2) .pl{color:#8a8a8a}.board li:nth-child(3) .pl{color:#a0522d}
+.board .nm{font-weight:800;min-width:0;overflow-wrap:anywhere}
+.board .sc{font-weight:900;color:var(--maroon)}
+.board .tm{color:var(--muted);font-weight:700;font-size:14px}
+.empty{color:var(--muted);margin:12px 0 0}
+.review{margin:12px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px;font-size:14px}
+.review li{display:flex;gap:8px}
+.review .m{font-weight:900;width:18px;flex:none}
+.review .m.y{color:var(--ok)}.review .m.n{color:var(--bad)}
+.confirm{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px;font-weight:700}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap" id="app">
+  <section class="hero" id="hero">
+    <svg class="spark" style="left:37%;top:12px;width:26px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2c1 6 3 8 9 10-6 2-8 4-9 10-1-6-3-8-9-10 6-2 8-4 9-10z"/></svg>
+    <svg class="spark" style="right:20px;top:18px;width:30px" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 34c8-4 4-12-2-10s0 12 10 2M24 6c2 6 0 8-4 8M30 10c3-3 6 0 3 3l-3 3-3-3c-3-3 0-6 3-3z"/></svg>
+    <div class="eyebrow">Жоғары мектеп педагогикасы</div>
+    <h1>Кәсіби оқыту процесінің мәні</h1>
+    <p>Дидактика бойынша 15 сөзді тап. Топ болып бір телефоннан жауап беріңдер — уақыт пен рейтинг автоматты түрде жазылады.</p>
+    <svg class="cat" viewBox="0 0 160 90" aria-hidden="true">
+      <path d="M128 52c10-18 26-22 26-10s-14 6-10 18" fill="none" stroke="#3b2015" stroke-width="9" stroke-linecap="round"/>
+      <path d="M22 84c-6-30 8-52 22-58l6-20 14 18 20 0 12-16 4 22c14 10 24 28 20 54z" fill="#3b2015"/>
+      <circle cx="54" cy="56" r="8" fill="#fff"/><circle cx="82" cy="56" r="8" fill="#fff"/>
+      <circle cx="55" cy="57" r="4" fill="#1b0f0a"/><circle cx="83" cy="57" r="4" fill="#1b0f0a"/>
+      <circle cx="68" cy="66" r="2.6" fill="#f3a9c0"/>
+      <path d="M38 64H14M38 68H16M98 64h22M98 68h20" stroke="#3b2015" stroke-width="1.5"/>
+    </svg>
+  </section>
+
+  <!-- START -->
+  <section id="start" class="card">
+    <div class="label">1-қадам</div>
+    <h2 class="section-title" style="margin-top:6px">Тобыңның атын жаз</h2>
+    <form id="startForm" class="field" novalidate>
+      <label for="groupName">Топ атауы</label>
+      <input type="text" id="groupName" maxlength="40" placeholder="Мысалы: Коменский командасы" autocomplete="off">
+      <p class="err" id="startErr" hidden></p>
+      <div class="row" style="margin-top:6px"><button class="btn" type="submit">Бастау ▸</button></div>
+    </form>
+    <p class="hint">15 сұрақ · әр сұраққа 4 нұсқа · таймер «Бастау» басылғанда іске қосылады. Жеңіс: көп дұрыс жауап, тең болса — аз уақыт.</p>
+  </section>
+
+  <!-- QUIZ -->
+  <section id="quiz" hidden style="display:flex;flex-direction:column;gap:14px">
+    <div class="bar"><span class="grp" id="qGroup"></span><span class="timer" aria-label="Таймер">⏱ <span id="timer">00:00</span></span></div>
+    <div class="progress" aria-hidden="true"><i id="prog" style="width:0"></i></div>
+    <div class="card">
+      <div class="qnum"><span id="qNum">1 / 15</span><span id="qScore">Дұрыс: 0</span></div>
+      <div class="label" style="margin-top:12px" id="qTopic"></div>
+      <p class="clue" id="qClue"></p>
+      <div class="opts" id="opts"></div>
+    </div>
+  </section>
+
+  <!-- RESULT -->
+  <section id="result" class="card peach" hidden>
+    <div class="label">Нәтиже</div>
+    <h2 class="section-title" style="margin-top:6px" id="rTitle">Жарайсыңдар!</h2>
+    <div class="big">
+      <div class="stat"><b id="rScore">0/15</b><span>дұрыс сөз</span></div>
+      <div class="stat"><b id="rTime">00:00</b><span>уақыт</span></div>
+    </div>
+    <p class="hint" id="rSave" style="color:var(--bark);font-weight:700"></p>
+    <details style="margin-top:10px"><summary style="font-weight:800;cursor:pointer">Жауаптарды көру</summary><ul class="review" id="review"></ul></details>
+  </section>
+
+  <!-- BOARD -->
+  <section class="card" id="boardCard">
+    <div class="row" style="justify-content:space-between">
+      <h2 class="section-title">Рейтинг</h2>
+      <span class="label" id="boardState"></span>
+    </div>
+    <ol class="board" id="board"></ol>
+    <p class="empty" id="boardEmpty">Әзірге нәтиже жоқ. Бірінші топ аяқтағанда осында пайда болады.</p>
+    <div id="ownerTools" hidden>
+      <div class="row" style="margin-top:14px"><button class="btn ghost small" id="clearBtn" type="button">Рейтингті тазалау</button></div>
+      <div class="confirm" id="clearConfirm" hidden>Барлық нәтижені өшіру керек пе?
+        <button class="btn small" id="clearYes" type="button">Иә, өшіру</button>
+        <button class="btn ghost small" id="clearNo" type="button">Жоқ</button></div>
+    </div>
+  </section>
+</div>
+
+<script>
+const QUESTIONS = [
+  {t:"«Дидактика» ұғымы",c:"Грек тілінен «үйрету», «оқыту» деген мағынаны беретін педагогика саласы.",a:"Дидактика",o:["Дидактика","Психология","Методика","Риторика"]},
+  {t:"«Дидактика» ұғымы",c:"Бұл ұғымды ғылыми айналымға алғаш енгізген неміс философы әрі педагогы (1571–1635).",a:"Ратке (Ратихия)",o:["Ратке (Ратихия)","Коменский","Лернер","Песталоцци"]},
+  {t:"«Дидактика» ұғымы",c:"«Ұлы дидактика» еңбегінің авторы, жалпы дидактиканың негізін салушы чех педагогы.",a:"Коменский",o:["Коменский","Ратке (Ратихия)","Ушинский","Лернер"]},
+  {t:"«Дидактика» ұғымы",c:"«Ұлы дидактика» еңбегі жарық көрген жыл.",a:"1657",o:["1657","1571","1635","1592"]},
+  {t:"Негізгі сұрақтар",c:"Ратихия мен Коменский кезеңінен бастап дидактика «нені оқыту керек?» сұрағымен қатар тағы қандай сұраққа жауап іздеді? «… оқыту керек?»",a:"Қалай",o:["Қалай","Қашан","Қайда","Кімді"]},
+  {t:"Дидактиканың қызметтері",c:"Оқыту процесінің заңдылықтарын, құрылымы мен мазмұнын зерттейтін қызмет.",a:"Ғылыми-теориялық",o:["Ғылыми-теориялық","Нормативтік-қолданбалы","Бақылау-реттеу","Нәтижелік-бағалау"]},
+  {t:"Дидактиканың қызметтері",c:"Оқыту мазмұнын жетілдіріп, тиімді әдістер мен жаңа технологияларды тәжірибеге ендіретін қызмет.",a:"Нормативтік-қолданбалы",o:["Нормативтік-қолданбалы","Ғылыми-теориялық","Мазмұндық","Процессуалдық"]},
+  {t:"Педагогикалық категориялар",c:"Оқытушы мен студенттің іс-әрекетімен сипатталатын, мақсатты түрде жобаланған екі жақты процесс.",a:"Оқыту",o:["Оқыту","Тәрбие","Білім","Даму"]},
+  {t:"Педагогикалық категориялар",c:"Адамның белгілі бір жүйедегі ұғымдарының, деректер мен пайымдарының жиынтығы.",a:"Білім",o:["Білім","Дағды","Мотив","Тәжірибе"]},
+  {t:"Білім беру жүйесі",c:"Шеберлік пен дағдыға баулудан басталып, нақты мамандыққа үйретумен тиянақталатын білім беру.",a:"Кәсіптік",o:["Кәсіптік","Жалпы","Мектепке дейінгі","Қосымша"]},
+  {t:"Оқытудың мәні",c:"Білім мазмұны төрт элементтен тұрады деген тұжырымдаманың авторы, белгілі дидакт.",a:"Лернер",o:["Лернер","Коменский","Ратке (Ратихия)","Выготский"]},
+  {t:"Оқыту процесінің құрылымы",c:"«Не үшін оқыту?» сұрағына жауап беріп, мақсат пен міндеттерді айқындайтын компонент.",a:"Мақсаттылық",o:["Мақсаттылық","Мазмұндық","Процессуалдық","Нәтижелік-бағалау"]},
+  {t:"Оқыту процесінің құрылымы",c:"«Қалай оқыту?» сұрағы бойынша оқыту құралдарын, формаларын, әдістері мен тәсілдерін сипаттайтын компонент.",a:"Процессуалдық",o:["Процессуалдық","Мақсаттылық","Мазмұндық","Бақылау-реттеу"]},
+  {t:"Оқыту процесінің құрылымы",c:"Бақылау-реттеу компоненті оқу барысын қадағалап, түзету жұмыстарын жүргізеді. «Түзету» сөзінің шетелдік баламасы.",a:"Коррекция",o:["Коррекция","Мотивация","Рефлексия","Интеграция"]},
+  {t:"Оқу мотивтері",c:"Тұлға белсенділігінің жетекші факторы және оқу әрекетінің сыртқы құрылымындағы бірінші кезең.",a:"Мотивация",o:["Мотивация","Бақылау","Бағалау","Коррекция"]}
+];
+const N = QUESTIONS.length;
+const $ = id => document.getElementById(id);
+const store = {get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
+const fmt = ms => {const s=Math.floor(ms/1000);return String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0")};
+const shuffle = a => {a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+
+let S = store.get("dq_state"); // {group, start, idx, answers:[{i,pick,ok}], order, end, saved, id}
+let tick = null, db = null, rows = [], localRows = store.get("dq_local") || [];
+
+function show(view){
+  $("start").hidden = view!=="start";
+  $("quiz").hidden = view!=="quiz";
+  $("result").hidden = view!=="result";
+}
+
+$("startForm").addEventListener("submit", e=>{
+  e.preventDefault();
+  const g = $("groupName").value.trim();
+  if(!g){$("startErr").textContent="Алдымен топтың атын жазыңдар.";$("startErr").hidden=false;$("groupName").focus();return}
+  $("startErr").hidden=true;
+  S = {group:g,start:Date.now(),idx:0,answers:[],order:shuffle([...Array(N).keys()]),end:null,saved:false,id:Math.random().toString(36).slice(2,10)};
+  S.opts = S.order.map(i=>shuffle(QUESTIONS[i].o));
+  store.set("dq_state",S);
+  startQuiz();
+});
+
+function startQuiz(){
+  show("quiz");
+  $("qGroup").textContent = S.group;
+  clearInterval(tick);
+  const upd=()=>{$("timer").textContent=fmt(Date.now()-S.start)};
+  upd(); tick=setInterval(upd,250);
+  renderQ();
+  window.scrollTo({top:$("quiz").offsetTop-10});
+}
+
+function renderQ(){
+  const q = QUESTIONS[S.order[S.idx]];
+  $("qNum").textContent = (S.idx+1)+" / "+N;
+  $("qScore").textContent = "Дұрыс: "+S.answers.filter(a=>a.ok).length;
+  $("prog").style.width = (S.idx/N*100)+"%";
+  $("qTopic").textContent = q.t;
+  $("qClue").textContent = q.c;
+  const box=$("opts"); box.textContent="";
+  S.opts[S.idx].forEach(o=>{
+    const b=document.createElement("button");b.type="button";b.className="opt";b.textContent=o;
+    b.onclick=()=>pick(o,b);box.appendChild(b);
+  });
+}
+
+function pick(o,btn){
+  const q = QUESTIONS[S.order[S.idx]];
+  const ok = o===q.a;
+  [...$("opts").children].forEach(b=>{b.disabled=true;if(b.textContent===q.a)b.classList.add("ok")});
+  if(!ok) btn.classList.add("bad");
+  S.answers.push({i:S.order[S.idx],pick:o,ok});
+  S.idx++;
+  if(S.idx>=N) S.end=Date.now();
+  store.set("dq_state",S);
+  setTimeout(()=>{ S.idx>=N ? finish() : renderQ() }, ok?550:1100);
+}
+
+function finish(){
+  clearInterval(tick);
+  $("prog").style.width="100%";
+  const score=S.answers.filter(a=>a.ok).length, time=S.end-S.start;
+  show("result");
+  $("rTitle").textContent = score>=13?"Керемет, "+S.group+"!":score>=9?"Жарайсыңдар, "+S.group+"!":"Аяқтадыңдар, "+S.group+"!";
+  $("rScore").textContent = score+"/"+N;
+  $("rTime").textContent = fmt(time);
+  const rv=$("review");rv.textContent="";
+  S.answers.forEach(a=>{const li=document.createElement("li");const m=document.createElement("span");m.className="m "+(a.ok?"y":"n");m.textContent=a.ok?"✓":"✗";const t=document.createElement("span");t.textContent=QUESTIONS[a.i].a+(a.ok?"":" (сендер: "+a.pick+")");li.append(m,t);rv.appendChild(li)});
+  const rec={group:S.group,score,timeMs:time,finishedAt:S.end};
+  if(!localRows.some(r=>r.id===S.id)){localRows.push({...rec,id:S.id});store.set("dq_local",localRows)}
+  saveResult(rec);
+  renderBoard();
+  window.scrollTo({top:$("result").offsetTop-10});
+  // allow a new game later
+  const again=document.createElement("button");again.className="btn ghost small";again.type="button";again.textContent="Жаңа топ бастау";again.style.marginTop="14px";
+  again.onclick=()=>{store.del("dq_state");S=null;$("groupName").value="";show("start");again.remove();window.scrollTo({top:0})};
+  $("result").appendChild(again);
+}
+
+async function saveResult(rec){
+  if(S.saved){$("rSave").textContent="✓ Нәтиже рейтингке жазылды.";return}
+  if(!db){$("rSave").textContent="Нәтиже осы телефонда сақталды. Ортақ рейтингке қосылу үшін claude.ai-ға кіріңдер немесе нәтижені мұғалімге көрсетіңдер.";return}
+  $("rSave").textContent="Рейтингке жазылуда…";
+  try{
+    await db.collection("results").doc(S.id).set(rec);
+    S.saved=true;store.set("dq_state",S);
+    $("rSave").textContent="✓ Нәтиже ортақ рейтингке жазылды.";
+  }catch(e){
+    $("rSave").textContent="Ортақ рейтингке жазылмады (рұқсат жоқ). Нәтижені экраннан көрсетіңдер — ол осы телефонда сақталды.";
+  }
+}
+
+function renderBoard(){
+  const src = db ? rows : localRows;
+  const list = src.filter(r=>r&&typeof r.group==="string").slice().sort((a,b)=>(b.score-a.score)||(a.timeMs-b.timeMs));
+  const ol=$("board");ol.textContent="";
+  $("boardEmpty").hidden = list.length>0;
+  list.forEach((r,k)=>{
+    const li=document.createElement("li"); if(S&&r.id===S.id)li.className="me";
+    const cells=[["pl",k<3?["🥇","🥈","🥉"][k]:String(k+1)],["nm",r.group],["sc",r.score+"/"+N],["tm",fmt(r.timeMs||0)]];
+    cells.forEach(([c,t])=>{const s=document.createElement("span");s.className=c;s.textContent=t;li.appendChild(s)});
+    ol.appendChild(li);
+  });
+}
+
+async function connect(){
+  $("boardState").textContent="Жүктелуде…";
+  renderBoard();
+  let d=null;
+  try{ d = window.claude?.use ? await window.claude.use("db") : null }catch(e){ d=null }
+  if(!d){ $("boardState").textContent="Осы телефон"; return }
+  db=d;
+  const timer=setTimeout(()=>{$("boardState").textContent="Байланыс күтілуде…"},10000);
+  db.collection("results").onSnapshot(snap=>{
+    if(!snap.metadata?.fromCache){clearTimeout(timer)}
+    rows = snap.docs.map(x=>({...x.data(),id:x.id}));
+    $("boardState").textContent="● Тікелей";
+    renderBoard();
+    if(S&&S.end&&!S.saved) saveResult({group:S.group,score:S.answers.filter(a=>a.ok).length,timeMs:S.end-S.start,finishedAt:S.end});
+  },err=>{clearTimeout(timer);$("boardState").textContent="Осы телефон";db=null;renderBoard()});
+  try{
+    const u = await window.claude.use("user");
+    if(u && u.isOwner && await u.isOwner()) $("ownerTools").hidden=false;
+  }catch(e){}
+}
+
+$("clearBtn").onclick=()=>{$("clearConfirm").hidden=false};
+$("clearNo").onclick=()=>{$("clearConfirm").hidden=true};
+$("clearYes").onclick=async()=>{
+  $("clearConfirm").hidden=true;
+  if(db){for(const r of rows){try{await db.collection("results").doc(r.id).delete()}catch(e){}}}
+  localRows=[];store.set("dq_local",[]);renderBoard();
+};
+
+// resume after reload
+if(S && S.group){
+  if(S.end) finish(); else startQuiz();
+} else show("start");
+connect();
+</script>
