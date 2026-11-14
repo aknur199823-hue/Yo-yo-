@@ -1,0 +1,600 @@
+<title>Дидактика Jeopardy</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;900&family=Golos+Text:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: one-screen projector board — title strip, 5×5 grid filling the middle, 4 team score cards along the bottom. Single deliberate dark look. */
+:root {
+  --ink: #0c1b2a;        /* page ground, deep night blue */
+  --board: #12304a;      /* tile face */
+  --board-hi: #1a4366;   /* tile hover */
+  --line: #24557d;       /* tile edges */
+  --chalk: #f3efe4;      /* main text */
+  --muted: #9fb6c9;      /* secondary text */
+  --gold: #f2b84b;       /* point values, highlights */
+  --gift: #ff7a59;       /* bonus surprise */
+  --ok: #46c38a;
+  --bad: #ef5d5d;
+  --t1: #ff7a59; --t2: #f2b84b; --t3: #46c38a; --t4: #5aa9f0;
+  --display: "Unbounded", "Arial Black", system-ui, sans-serif;
+  --body: "Golos Text", "Segoe UI", system-ui, sans-serif;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body {
+  background: var(--ink);
+  color: var(--chalk);
+  font-family: var(--body);
+  font-size: clamp(14px, 1.1vw, 20px);
+  overflow: hidden;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+
+.app {
+  height: 100%;
+  display: flex; flex-direction: column; gap: clamp(8px, 1.2vh, 16px);
+  padding-block: clamp(8px, 1.5vh, 20px);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  background:
+    radial-gradient(ellipse at 50% -20%, rgba(90,169,240,.18), transparent 60%),
+    var(--ink);
+}
+
+/* ---------- header ---------- */
+header {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+}
+.brand { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; min-width: 0; }
+.brand h1 {
+  margin: 0; font-family: var(--display); font-weight: 900;
+  font-size: clamp(20px, 2.4vw, 42px); letter-spacing: .02em; text-transform: uppercase;
+}
+.brand h1 span { color: var(--gold); }
+.brand p { margin: 0; color: var(--muted); font-size: .95em; }
+.tools { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn {
+  border: 1px solid var(--line); background: var(--board);
+  padding: .55em 1.1em; border-radius: 10px; font-weight: 600;
+  transition: background .15s, border-color .15s;
+}
+.btn:hover { background: var(--board-hi); }
+.btn.primary { background: var(--gold); color: var(--ink); border-color: var(--gold); }
+.btn.primary:hover { filter: brightness(1.08); }
+.left-count { color: var(--muted); font-size: .9em; align-self: center; font-variant-numeric: tabular-nums; }
+
+/* ---------- board ---------- */
+.board {
+  flex: 1; min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-rows: auto repeat(5, minmax(0, 1fr));
+  gap: clamp(5px, .7vw, 12px);
+}
+.cat {
+  display: flex; align-items: center; justify-content: center; text-align: center;
+  padding: .7em .5em; min-height: 4.2em;
+  font-family: var(--display); font-weight: 700; text-transform: uppercase;
+  font-size: clamp(11px, 1.05vw, 19px); line-height: 1.2; letter-spacing: .03em;
+  color: var(--chalk);
+  border-bottom: 3px solid var(--gold);
+  text-wrap: balance;
+}
+.tile {
+  position: relative;
+  border: 1px solid var(--line); border-radius: 12px;
+  background: linear-gradient(180deg, var(--board-hi), var(--board));
+  font-family: var(--display); font-weight: 900;
+  font-size: clamp(22px, 3.4vw, 64px);
+  color: var(--gold);
+  text-shadow: 0 3px 0 rgba(0,0,0,.35);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 4px 0 rgba(0,0,0,.25);
+  transition: transform .12s, background .15s;
+  font-variant-numeric: tabular-nums;
+}
+.tile:hover:not(:disabled) { transform: translateY(-3px); background: var(--board-hi); }
+.tile:disabled {
+  cursor: default; background: transparent; box-shadow: none; text-shadow: none;
+  color: transparent; border-style: dashed; border-color: rgba(36,85,125,.5);
+}
+.tile .who {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-family: var(--body); font-weight: 600; font-size: clamp(11px, .9vw, 16px); color: var(--muted);
+  text-shadow: none;
+}
+.tile .who i { display: inline-block; width: .7em; height: .7em; border-radius: 50%; margin-right: .4em; }
+
+/* ---------- teams ---------- */
+.teams { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(6px, .8vw, 14px); }
+.team {
+  --c: var(--t1);
+  border-radius: 14px; padding: .6em .9em;
+  background: var(--board);
+  border-top: 5px solid var(--c);
+  display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 4px 10px;
+  min-width: 0;
+  transition: transform .25s;
+}
+.team.bump { transform: scale(1.05); }
+.team input {
+  grid-column: 1 / -1;
+  background: transparent; border: 0; border-bottom: 1px dashed transparent;
+  font: 600 1em var(--body); color: var(--c); padding: 0; min-width: 0; width: 100%;
+}
+.team input:hover { border-bottom-color: var(--line); }
+.team .score {
+  font-family: var(--display); font-weight: 900; font-variant-numeric: tabular-nums;
+  font-size: clamp(22px, 2.6vw, 48px); line-height: 1;
+}
+.team .adj { display: flex; gap: 4px; }
+.team .adj button {
+  border: 1px solid var(--line); background: transparent; border-radius: 8px;
+  padding: .25em .5em; font-size: .8em; color: var(--muted);
+}
+.team .adj button:hover { color: var(--chalk); background: var(--board-hi); }
+
+/* ---------- overlays ---------- */
+.overlay {
+  position: fixed; inset: 0; z-index: 20;
+  background: rgba(6, 14, 22, .82);
+  backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+}
+.card {
+  width: min(1200px, 100%); max-height: 100%; overflow: auto;
+  background: linear-gradient(180deg, #15395a, var(--board));
+  border: 1px solid var(--line); border-radius: 22px;
+  padding: clamp(18px, 3vw, 48px);
+  display: flex; flex-direction: column; gap: clamp(14px, 2vh, 28px);
+  box-shadow: 0 30px 80px rgba(0,0,0,.5);
+  animation: pop .28s cubic-bezier(.2,1.4,.4,1);
+}
+@keyframes pop { from { transform: scale(.85); opacity: 0; } to { transform: none; opacity: 1; } }
+.q-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.q-cat { text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 600; }
+.q-val { font-family: var(--display); font-weight: 900; color: var(--gold); font-size: clamp(24px, 2.6vw, 44px); }
+.q-text {
+  font-family: var(--body); font-weight: 600;
+  font-size: clamp(22px, 3vw, 54px); line-height: 1.25; text-wrap: balance; margin: 0;
+}
+.q-answer {
+  border-left: 6px solid var(--ok); background: rgba(70,195,138,.1);
+  border-radius: 0 12px 12px 0; padding: .8em 1.1em;
+  font-size: clamp(18px, 2vw, 36px); line-height: 1.35;
+}
+.q-answer b { color: var(--ok); display: block; font-size: .55em; letter-spacing: .1em; text-transform: uppercase; margin-bottom: .3em; }
+.timer-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.timer {
+  font-family: var(--display); font-weight: 900; font-variant-numeric: tabular-nums;
+  font-size: clamp(22px, 2.2vw, 38px); min-width: 3.2ch; color: var(--chalk);
+}
+.timer.low { color: var(--bad); animation: blink .5s steps(2) infinite; }
+@keyframes blink { 50% { opacity: .4; } }
+.bar { flex: 1; min-width: 120px; height: 10px; border-radius: 6px; background: rgba(255,255,255,.08); overflow: hidden; }
+.bar i { display: block; height: 100%; width: 100%; background: var(--gold); transition: width 1s linear; }
+.award { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.award .slot { display: flex; flex-direction: column; gap: 6px; border-radius: 12px; padding: .6em; background: rgba(0,0,0,.18); border-top: 4px solid var(--c); min-width: 0; }
+.award .slot span { font-weight: 700; color: var(--c); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.award .slot div { display: flex; gap: 6px; }
+.award button { flex: 1; border: 0; border-radius: 10px; padding: .6em .3em; font-weight: 700; font-size: 1.05em; }
+.award .plus { background: var(--ok); color: #06261a; }
+.award .minus { background: rgba(239,93,93,.18); color: var(--bad); border: 1px solid rgba(239,93,93,.4); }
+.award button.done { outline: 3px solid var(--chalk); }
+.q-actions { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.hint { color: var(--muted); font-size: .85em; }
+
+/* bonus */
+.gift { text-align: center; align-items: center; }
+.gift .boom {
+  font-family: var(--display); font-weight: 900; color: var(--gift);
+  font-size: clamp(64px, 11vw, 200px); line-height: 1;
+  animation: wiggle 1s ease-in-out infinite alternate;
+}
+@keyframes wiggle { from { transform: rotate(-4deg) scale(1); } to { transform: rotate(4deg) scale(1.06); } }
+.gift h2 { margin: 0; font-family: var(--display); font-size: clamp(24px, 3.2vw, 56px); text-transform: uppercase; }
+.gift p { margin: 0; color: var(--muted); font-size: 1.2em; }
+.gift .pick { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; width: 100%; }
+.gift .pick button { border: 0; border-radius: 12px; padding: .9em .4em; font-weight: 700; font-size: 1.15em; background: var(--c); color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* results */
+.results h2 { margin: 0; font-family: var(--display); font-weight: 900; text-transform: uppercase; font-size: clamp(28px, 3.6vw, 64px); text-align: center; }
+.podium { display: flex; align-items: flex-end; justify-content: center; gap: clamp(8px, 1.5vw, 24px); min-height: 40vh; }
+.step {
+  flex: 1; max-width: 260px; min-width: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 8px;
+}
+.step .nm { font-weight: 700; font-size: clamp(16px, 1.6vw, 28px); color: var(--c); text-align: center; overflow-wrap: anywhere; }
+.step .pts { font-family: var(--display); font-weight: 900; font-size: clamp(20px, 2.4vw, 42px); font-variant-numeric: tabular-nums; }
+.step .block {
+  width: 100%; border-radius: 14px 14px 0 0; background: var(--c);
+  display: flex; align-items: flex-start; justify-content: center; padding-top: .3em;
+  font-family: var(--display); font-weight: 900; color: var(--ink); font-size: clamp(32px, 4vw, 72px);
+  animation: rise .9s cubic-bezier(.2,1,.3,1) both;
+  transform-origin: bottom;
+}
+.step:nth-child(1) .block { animation-delay: .6s; }
+.step:nth-child(2) .block { animation-delay: 0s; }
+.step:nth-child(3) .block { animation-delay: .3s; }
+@keyframes rise { from { transform: scaleY(0); } to { transform: none; } }
+.confirm { text-align: center; align-items: center; width: min(640px, 100%); }
+.confirm h2 { margin: 0; font-family: var(--display); font-size: clamp(20px, 2vw, 32px); }
+.confirm div { display: flex; gap: 10px; justify-content: center; }
+
+canvas#fx { position: fixed; inset: 0; pointer-events: none; z-index: 30; width: 100%; height: 100%; }
+
+@media (max-width: 760px) {
+  body { overflow: auto; }
+  .app { height: auto; min-height: 100%; }
+  .board { grid-template-columns: repeat(5, minmax(0, 1fr)); grid-auto-rows: 64px; }
+  .cat { font-size: 9px; min-height: 5em; padding: .3em .1em; }
+  .tile { font-size: 18px; height: 64px; }
+  .teams, .award, .gift .pick { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+
+<div class="app">
+  <header>
+    <div class="brand">
+      <h1>Дидактика <span>Jeopardy</span></h1>
+      <p>Кәсіби оқыту процесінің мәні</p>
+    </div>
+    <div class="tools">
+      <span class="left-count" id="leftCount"></span>
+      <button class="btn" id="fullBtn" type="button">Толық экран</button>
+      <button class="btn" id="resetBtn" type="button">Жаңа ойын</button>
+      <button class="btn primary" id="finishBtn" type="button">Қорытынды</button>
+    </div>
+  </header>
+  <main class="board" id="board" aria-label="Ойын тақтасы"></main>
+  <section class="teams" id="teams" aria-label="Топтар"></section>
+</div>
+<div class="overlay" id="overlay" hidden></div>
+<canvas id="fx"></canvas>
+
+<script>
+const VALUES = [100, 200, 300, 400, 500];
+const CATS = [
+  { name: "Дидактика тарихы", qs: [
+    ["«Дидактика» сөзі қай тілден шыққан?", "Грек тілінен: «didaktikos» — үйрету, «didasko» — зерделеуші, оқыту."],
+    ["Атақты «Ұлы дидактика» еңбегінің авторы кім?", "Чех педагогы Ян Амос Коменский (1592–1670)."],
+    ["«Дидактика» ұғымын ғылыми айналымға алғаш рет енгізген неміс философы әрі педагогы кім?", "Вольфганг Ратке (Ратихия), 1571–1635 жж."],
+    ["«Ұлы дидактика» еңбегі қай жылы жарық көрді?", "1657 жылы."],
+    ["Коменский дидактиканы қалай анықтады? (дәл тұжырымын айтыңыз)", "«Бәрін барлығына жан-жақты оқыту өнері»."]
+  ]},
+  { name: "Пәні, сұрақтары, заңдылықтары", qs: [
+    ["Ратке мен Коменский кезеңіндегі классикалық дидактика қандай 2 негізгі сұраққа жауап іздеді?", "«Нені оқыту керек?» (мазмұны) және «Қалай оқыту керек?» (әдістері)."],
+    ["Қазіргі дидактика қандай қосымша сұрақтарға жауап іздейді? Кемінде 3-ін атаңыз.", "Қашан оқыту? Қайда оқыту? Кімді оқыту? Неге оқыту?"],
+    ["Дидактиканың пәні не?", "Адамға білім беру мен тәрбиелеу құралы ретіндегі оқыту, яғни оқыту мен үйретудің бірліктегі өзара әрекеттестігі."],
+    ["Дидактика атқаратын екі негізгі қызметті атаңыз.", "Ғылыми-теориялық қызметі (заңдылықтарды, құрылым мен мазмұнды зерттейді) және нормативтік-қолданбалы қызметі (жаңа әдістер мен технологияларды тәжірибеге ендіреді)."],
+    ["Оқыту үдерісінің негізгі заңдылықтарының кемінде 3-ін атаңыз.", "Кәсіби бағдар (қызықтыратын мамандық бойынша білім беру); белсенді әрекет (талап қою арқылы дағды қалыптастыру); дараландыру (жеке және ұжымдық жұмыс); техникалық құралдарды мақсатқа сай қолдану; тәжірибелік модельдеу (қоғам талаптарына бейімдеу)."]
+  ]},
+  { name: "Базалық ұғымдар", qs: [
+    ["Білім беру жүйесінің барлық деңгейлері қандай принципке негізделеді?", "Үздіксіздік пен сабақтастық принципіне."],
+    ["Іске асырылатын бағдарламалар сипатына қарай білім беру қандай екі үлкен жүйеге бөлінеді?", "Жалпы білім беру және кәсіптік білім беру."],
+    ["Білім қандай түрлерге бөлінеді? Кемінде 3-ін атаңыз.", "Тұрмыстық, ғылымға дейінгі, ғылыми, эмпирикалық және теориялық."],
+    ["Кәсіптік білім беруге қандай деңгейлер жатады?", "Кәсіптік бастауыш, орта, жоғары, ЖОО-дан кейінгі (магистратура, докторантура) және қосымша кәсіптік білім беру."],
+    ["Қандай ұғым туралы айтылып тұр: «Оқытушы мен студенттің іс-әрекетімен сипатталатын, білім алу, тәрбие және даму іске асатын мақсатты түрде жобаланған екі жақты процесс»?", "Оқыту."]
+  ]},
+  { name: "Жоғары мектеп дидактикасы", qs: [
+    ["Жоғары мектеп дидактикасы неше мәселені ғылыми негізде шешуді көздейді?", "5 мәселені."],
+    ["Сырттай қарағанда оқу процесі қандай үш компоненттен тұрады?", "Оқытушы, студент және білім мазмұны."],
+    ["Білім мазмұны төрт элементтен құралады деген тұжырымдаманың авторы кім?", "Исаак Яковлевич Лернер (1917–1996), белгілі дидакт."],
+    ["Лернер бойынша білім мазмұнының 4 элементін атаңыз.", "1) Білім; 2) тәжірибеде жинақталған әрекет-амалдар; 3) шығармашылық тәжірибе; 4) эмоционалдық-құндылық қатынас пен мотив."],
+    ["Жоғары мектеп дидактикасының 5 мәселесінің кемінде 3-ін атаңыз.", "Жоғары білімнің спецификалық мақсатын негіздеу; жоғары мектептің әлеуметтік қызметін негіздеу; білім мазмұнын ғылыми негіздеу; педагогикалық процесті конструкциялау; тиімді оқыту жолдары, формалары мен технологияларын анықтау."]
+  ]},
+  { name: "Оқу процесінің құрылымы", qs: [
+    ["Оқу процесінде тұлға белсенділігінің жетекші факторы не?", "Оқу мотиві."],
+    ["Оқыту процесінің қай компоненті «Нені оқыту?» сұрағына жауап береді?", "Мазмұндық компонент."],
+    ["Оқу процесі қандай қарама-қайшылық арқылы дамиды?", "Білім алушының бұрынғы білімі мен меңгеруге тиісті жаңа білім арасындағы қарама-қайшылық арқылы."],
+    ["Жоғары мектептегі оқыту процесінің 5 компонентін атаңыз.", "Мақсаттылық (не үшін?), мазмұндық (нені?), процессуалдық (қалай?), бақылау-реттеу (қалай түзету?), нәтижелік-бағалау (нәтиже қандай?)."],
+    ["Оқу әрекетінің сыртқы құрылымының 5 кезеңін ретімен атаңыз.", "1) Мотивация; 2) түрлі жағдаяттағы оқу міндеттері; 3) оқу қызметтері; 4) біртіндеп өзін-өзі бақылауға көшетін бақылау; 5) біртіндеп өзін-өзі бағалауға көшетін бағалау."]
+  ]}
+];
+const TEAM_COLORS = ["var(--t1)", "var(--t2)", "var(--t3)", "var(--t4)"];
+const BONUS_SET = [100, 100, 200, 200];
+const TIMER_SEC = 30;
+const KEY = "didaktika-jeopardy-v1";
+
+let state;
+function freshState() {
+  const cells = [];
+  for (let c = 0; c < 5; c++) for (let r = 0; r < 5; r++) cells.push(c + "-" + r);
+  // shuffle and pick bonus cells, avoiding two in the same column
+  const bonus = {};
+  const usedCols = new Set();
+  const shuffled = cells.sort(() => Math.random() - .5);
+  let i = 0;
+  for (const id of shuffled) {
+    const col = id.split("-")[0];
+    if (usedCols.has(col)) continue;
+    usedCols.add(col);
+    bonus[id] = BONUS_SET[i++];
+    if (i === BONUS_SET.length) break;
+  }
+  return {
+    teams: [1, 2, 3, 4].map(n => ({ name: n + "-топ", score: 0 })),
+    used: {},   // id -> team index who answered, or -1
+    bonus,      // id -> bonus value
+    history: []
+  };
+}
+function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+function load() {
+  try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && s.teams && s.used) return s; } catch (e) {}
+  return null;
+}
+
+const $ = s => document.querySelector(s);
+const boardEl = $("#board"), teamsEl = $("#teams"), ov = $("#overlay");
+
+function renderBoard() {
+  boardEl.innerHTML = "";
+  CATS.forEach(c => {
+    const h = document.createElement("div");
+    h.className = "cat"; h.textContent = c.name;
+    boardEl.appendChild(h);
+  });
+  for (let r = 0; r < 5; r++) {
+    for (let c = 0; c < 5; c++) {
+      const id = c + "-" + r;
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "tile";
+      b.style.gridColumn = c + 1; b.style.gridRow = r + 2;
+      const done = id in state.used;
+      b.disabled = done;
+      b.textContent = VALUES[r];
+      b.setAttribute("aria-label", CATS[c].name + ", " + VALUES[r] + (done ? " — ойналды" : ""));
+      if (done && state.used[id] >= 0) {
+        const t = state.teams[state.used[id]];
+        const w = document.createElement("span"); w.className = "who";
+        w.innerHTML = '<i style="background:' + TEAM_COLORS[state.used[id]] + '"></i>';
+        w.append(t.name);
+        b.appendChild(w);
+      }
+      b.addEventListener("click", () => openCell(c, r));
+      boardEl.appendChild(b);
+    }
+  }
+  const left = 25 - Object.keys(state.used).length;
+  $("#leftCount").textContent = left ? "Қалған сұрақ: " + left : "Барлық сұрақ ойналды";
+}
+
+function renderTeams() {
+  teamsEl.innerHTML = "";
+  state.teams.forEach((t, i) => {
+    const d = document.createElement("div");
+    d.className = "team"; d.style.setProperty("--c", TEAM_COLORS[i]); d.id = "team" + i;
+    d.innerHTML = '<input id="tname' + i + '" aria-label="Топ атауы" maxlength="24">' +
+      '<div class="score">' + t.score + '</div>' +
+      '<div class="adj"><button type="button" data-d="-100" aria-label="100 ұпай алу">−100</button><button type="button" data-d="100" aria-label="100 ұпай қосу">+100</button></div>';
+    const inp = d.querySelector("input");
+    inp.value = t.name;
+    inp.addEventListener("input", () => { t.name = inp.value || (i + 1) + "-топ"; save(); renderBoard(); });
+    d.querySelectorAll(".adj button").forEach(btn => btn.addEventListener("click", () => addScore(i, +btn.dataset.d)));
+    teamsEl.appendChild(d);
+  });
+}
+function addScore(i, d) {
+  state.teams[i].score += d;
+  save();
+  const el = document.getElementById("team" + i);
+  if (el) {
+    el.querySelector(".score").textContent = state.teams[i].score;
+    el.classList.remove("bump"); void el.offsetWidth; el.classList.add("bump");
+    setTimeout(() => el.classList.remove("bump"), 250);
+  }
+}
+
+let timerId = null;
+function stopTimer() { clearInterval(timerId); timerId = null; }
+function closeOverlay() { stopTimer(); ov.hidden = true; ov.innerHTML = ""; }
+
+function openCell(c, r) {
+  const id = c + "-" + r;
+  if (id in state.used) return;
+  if (state.bonus[id]) showGift(c, r, state.bonus[id]);
+  else showQuestion(c, r);
+}
+
+function showGift(c, r, amount) {
+  ov.hidden = false;
+  ov.innerHTML =
+    '<div class="card gift" role="dialog" aria-modal="true" aria-label="Сыйлық">' +
+      '<div class="boom">+' + amount + '</div>' +
+      '<h2>Сыйлық ұяшығы!</h2>' +
+      '<p>Бұл ұяшықты таңдаған топ ' + amount + ' бонус ұпай алады. Қай топ таңдады?</p>' +
+      '<div class="pick">' + state.teams.map((t, i) =>
+        '<button type="button" data-i="' + i + '" style="--c:' + TEAM_COLORS[i] + '"></button>').join("") + '</div>' +
+      '<p class="hint">Бонустан кейін сол ұяшықтың сұрағы ашылады</p>' +
+    '</div>';
+  ov.querySelectorAll(".pick button").forEach(b => {
+    b.textContent = state.teams[+b.dataset.i].name;
+    b.addEventListener("click", () => {
+      addScore(+b.dataset.i, amount);
+      delete state.bonus[c + "-" + r];
+      save();
+      burst(TEAM_COLORS[+b.dataset.i]);
+      showQuestion(c, r);
+    });
+  });
+  burst();
+}
+
+function showQuestion(c, r) {
+  const id = c + "-" + r;
+  const [q, a] = CATS[c].qs[r];
+  const val = VALUES[r];
+  const awarded = {};
+  ov.hidden = false;
+  ov.innerHTML =
+    '<div class="card" role="dialog" aria-modal="true" aria-label="Сұрақ">' +
+      '<div class="q-head"><span class="q-cat"></span><span class="q-val">' + val + '</span></div>' +
+      '<p class="q-text"></p>' +
+      '<div class="timer-row">' +
+        '<span class="timer" id="tm">' + TIMER_SEC + '</span>' +
+        '<div class="bar"><i id="tbar"></i></div>' +
+        '<button type="button" class="btn" id="tStart">Таймерді қосу</button>' +
+      '</div>' +
+      '<div class="q-answer" id="ans" hidden><b>Дұрыс жауап</b><span></span></div>' +
+      '<div class="award">' + state.teams.map((t, i) =>
+        '<div class="slot" style="--c:' + TEAM_COLORS[i] + '"><span></span><div>' +
+        '<button type="button" class="plus" data-i="' + i + '">+' + val + '</button>' +
+        '<button type="button" class="minus" data-i="' + i + '" aria-label="' + val + ' алу">−</button></div></div>').join("") + '</div>' +
+      '<div class="q-actions">' +
+        '<button type="button" class="btn" id="showAns">Жауапты көрсету</button>' +
+        '<span class="hint" style="align-self:center">Бос орын — жауап, Esc — жабу</span>' +
+        '<button type="button" class="btn primary" id="closeQ">Тақтаға оралу</button>' +
+      '</div>' +
+    '</div>';
+  ov.querySelector(".q-cat").textContent = CATS[c].name;
+  ov.querySelector(".q-text").textContent = q;
+  ov.querySelector("#ans span").textContent = a;
+  ov.querySelectorAll(".slot span").forEach((s, i) => s.textContent = state.teams[i].name);
+
+  ov.querySelector("#showAns").addEventListener("click", revealAnswer);
+  ov.querySelectorAll(".award .plus").forEach(b => b.addEventListener("click", () => {
+    const i = +b.dataset.i;
+    if (awarded[i] === "plus") { addScore(i, -val); delete awarded[i]; b.classList.remove("done"); return; }
+    if (awarded[i] === "minus") { addScore(i, val); ov.querySelector('.minus[data-i="' + i + '"]').classList.remove("done"); }
+    addScore(i, val); awarded[i] = "plus"; b.classList.add("done");
+    burst(TEAM_COLORS[i]);
+  }));
+  ov.querySelectorAll(".award .minus").forEach(b => b.addEventListener("click", () => {
+    const i = +b.dataset.i;
+    if (awarded[i] === "minus") { addScore(i, val); delete awarded[i]; b.classList.remove("done"); return; }
+    if (awarded[i] === "plus") { addScore(i, -val); ov.querySelector('.plus[data-i="' + i + '"]').classList.remove("done"); }
+    addScore(i, -val); awarded[i] = "minus"; b.classList.add("done");
+  }));
+  ov.querySelector("#tStart").addEventListener("click", startTimer);
+  ov.querySelector("#closeQ").addEventListener("click", () => {
+    const winner = Object.keys(awarded).find(k => awarded[k] === "plus");
+    state.used[id] = winner !== undefined ? +winner : -1;
+    save(); closeOverlay(); renderBoard();
+    if (Object.keys(state.used).length === 25) setTimeout(showResults, 400);
+  });
+  ov.querySelector("#closeQ").focus();
+}
+function revealAnswer() {
+  const a = document.getElementById("ans");
+  if (a) { a.hidden = false; stopTimer(); }
+}
+function startTimer() {
+  stopTimer();
+  let left = TIMER_SEC;
+  const tm = $("#tm"), bar = $("#tbar");
+  tm.textContent = left; tm.classList.remove("low"); bar.style.width = "100%";
+  timerId = setInterval(() => {
+    left--;
+    tm.textContent = Math.max(left, 0);
+    bar.style.width = Math.max(left, 0) / TIMER_SEC * 100 + "%";
+    if (left <= 5) tm.classList.add("low");
+    if (left <= 0) { stopTimer(); tm.textContent = "Уақыт бітті!"; }
+  }, 1000);
+}
+
+function showResults() {
+  const ranked = state.teams.map((t, i) => ({ ...t, i })).sort((a, b) => b.score - a.score);
+  // shared places for ties
+  let place = 0, prev = null;
+  ranked.forEach((t, k) => { if (t.score !== prev) { place = k + 1; prev = t.score; } t.place = place; });
+  const heights = { 1: 100, 2: 72, 3: 50, 4: 32 };
+  // podium order: 2nd, 1st, 3rd, 4th visually -> use top 3 in classic order, 4th at the end
+  const order = [ranked[1], ranked[0], ranked[2], ranked[3]];
+  ov.hidden = false;
+  ov.innerHTML =
+    '<div class="card results" role="dialog" aria-modal="true" aria-label="Нәтижелер">' +
+      '<h2>Ойын нәтижесі</h2>' +
+      '<div class="podium">' + order.map((t, k) =>
+        '<div class="step" style="--c:' + TEAM_COLORS[t.i] + '">' +
+          '<div class="nm"></div><div class="pts">' + t.score + '</div>' +
+          '<div class="block" style="height:' + heights[t.place] * .35 + 'vh;animation-delay:' + [.3, .9, 0, 0][k] * (t.place === 4 ? 0 : 1) + 's">' + t.place + '</div>' +
+        '</div>').join("") + '</div>' +
+      '<div class="q-actions"><span></span><button type="button" class="btn primary" id="closeR">Тақтаға оралу</button></div>' +
+    '</div>';
+  ov.querySelectorAll(".step").forEach((s, k) => s.querySelector(".nm").textContent = order[k].name);
+  ov.querySelector("#closeR").addEventListener("click", closeOverlay);
+  setTimeout(() => { burst(); setTimeout(burst, 500); setTimeout(burst, 1000); }, 900);
+}
+
+function confirmReset() {
+  ov.hidden = false;
+  ov.innerHTML =
+    '<div class="card confirm" role="dialog" aria-modal="true">' +
+      '<h2>Жаңа ойын бастау керек пе?</h2>' +
+      '<p class="hint">Барлық ұпай мен ашылған ұяшықтар өшеді. Сыйлық ұяшықтары жаңадан жасырылады. Топ атаулары сақталады.</p>' +
+      '<div><button type="button" class="btn" id="noR">Жоқ</button><button type="button" class="btn primary" id="yesR">Иә, жаңа ойын</button></div>' +
+    '</div>';
+  $("#noR").addEventListener("click", closeOverlay);
+  $("#yesR").addEventListener("click", () => {
+    const names = state.teams.map(t => t.name);
+    state = freshState();
+    state.teams.forEach((t, i) => t.name = names[i]);
+    save(); closeOverlay(); renderBoard(); renderTeams();
+  });
+}
+
+/* confetti */
+const fx = $("#fx"), ctx = fx.getContext("2d");
+let parts = [], raf = null;
+function burst(color) {
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  fx.width = innerWidth; fx.height = innerHeight;
+  const cols = color ? [color] : TEAM_COLORS;
+  const css = getComputedStyle(document.documentElement);
+  const resolve = v => v.startsWith("var(") ? css.getPropertyValue(v.slice(4, -1)).trim() : v;
+  for (let k = 0; k < 140; k++) {
+    parts.push({
+      x: innerWidth / 2 + (Math.random() - .5) * 200, y: innerHeight * .45,
+      vx: (Math.random() - .5) * 18, vy: -Math.random() * 16 - 4,
+      s: 6 + Math.random() * 8, r: Math.random() * 6, vr: (Math.random() - .5) * .3,
+      c: resolve(cols[k % cols.length]), life: 120 + Math.random() * 60
+    });
+  }
+  if (!raf) tick();
+}
+function tick() {
+  ctx.clearRect(0, 0, fx.width, fx.height);
+  parts = parts.filter(p => p.life-- > 0 && p.y < fx.height + 40);
+  for (const p of parts) {
+    p.vy += .45; p.vx *= .99; p.x += p.vx; p.y += p.vy; p.r += p.vr;
+    ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r);
+    ctx.fillStyle = p.c; ctx.fillRect(-p.s / 2, -p.s / 4, p.s, p.s / 2);
+    ctx.restore();
+  }
+  raf = parts.length ? requestAnimationFrame(tick) : (ctx.clearRect(0, 0, fx.width, fx.height), null);
+}
+
+/* wiring */
+$("#finishBtn").addEventListener("click", showResults);
+$("#resetBtn").addEventListener("click", confirmReset);
+$("#fullBtn").addEventListener("click", () => {
+  try {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else document.documentElement.requestFullscreen().catch(() => {});
+  } catch (e) {}
+});
+ov.addEventListener("click", e => { if (e.target === ov && !ov.querySelector("#closeQ") && !ov.querySelector(".gift")) closeOverlay(); });
+document.addEventListener("keydown", e => {
+  if (ov.hidden) return;
+  if (e.key === "Escape") {
+    const q = ov.querySelector("#closeQ");
+    if (q) q.click(); else if (!ov.querySelector(".gift")) closeOverlay();
+  }
+  if (e.key === " " && ov.querySelector("#ans")) { e.preventDefault(); revealAnswer(); }
+});
+
+function start(data) {
+  state = (data && data.state) || load() || freshState();
+  save(); renderBoard(); renderTeams();
+}
+window.claude?.hot?.snapshot?.(() => ({ state }));
+window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
+</script>
